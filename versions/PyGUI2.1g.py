@@ -9677,15 +9677,9 @@ class PhotometryViewer:
 
         print("=== End Diagnostics ===\n")
 
-    def update_filter(self, _=None, preserve_blanking=True, force_update=False):
+        def update_filter(self, _=None, preserve_blanking=True, force_update=False):
         """
         Update filter parameters and reprocess data, but only when Apply button is clicked.
-
-        Parameters:
-        -----------
-        _: event parameter (unused)
-        preserve_blanking: whether to preserve manual blanking regions
-        force_update: whether to force recalculation (set by Apply button)
         """
         # If not forced by Apply button, just store parameters without updating
         if not force_update:
@@ -9708,17 +9702,62 @@ class PhotometryViewer:
             if preserve_blanking and hasattr(self, 'blanking_regions'):
                 blanking_regions_backup = self.blanking_regions.copy()
 
-            # Get filter parameters from UI
-            self.low_cutoff = float(self.low_slider.get())
-            self.high_cutoff = float(self.high_slider.get())
-            self.downsample_factor = max(1, int(self.downsample_slider.get()))
-            self.artifact_threshold = float(self.artifact_slider.get())
-            self.drift_correction = bool(self.drift_var.get())
-            self.drift_degree = int(self.poly_degree_var.get())
-            edge_protection = bool(self.edge_protection_var.get()) if hasattr(self, 'edge_protection_var') else True
+            # SAFELY get filter parameters from UI with robust exception handling
+            # For each parameter, try to get it from the widget but fall back to the existing value
+            try:
+                if hasattr(self, 'low_slider'):
+                    self.low_cutoff = float(self.low_slider.get())
+            except (tk.TclError, AttributeError, TypeError):
+                # Keep existing value of self.low_cutoff
+                pass
+
+            try:
+                if hasattr(self, 'high_slider'):
+                    self.high_cutoff = float(self.high_slider.get())
+            except (tk.TclError, AttributeError, TypeError):
+                # Keep existing value of self.high_cutoff
+                pass
+
+            try:
+                if hasattr(self, 'downsample_slider'):
+                    self.downsample_factor = max(1, int(self.downsample_slider.get()))
+            except (tk.TclError, AttributeError, TypeError):
+                # Keep existing value of self.downsample_factor
+                pass
+
+            try:
+                if hasattr(self, 'artifact_slider'):
+                    self.artifact_threshold = float(self.artifact_slider.get())
+            except (tk.TclError, AttributeError, TypeError):
+                # Keep existing value of self.artifact_threshold
+                pass
+
+            try:
+                if hasattr(self, 'drift_var'):
+                    self.drift_correction = bool(self.drift_var.get())
+            except (tk.TclError, AttributeError, TypeError):
+                # Keep existing value of self.drift_correction
+                pass
+
+            try:
+                if hasattr(self, 'poly_degree_var'):
+                    self.drift_degree = int(self.poly_degree_var.get())
+            except (tk.TclError, AttributeError, TypeError):
+                # Keep existing value of self.drift_degree
+                pass
+
+            edge_protection = True
+            try:
+                if hasattr(self, 'edge_protection_var'):
+                    edge_protection = bool(self.edge_protection_var.get())
+            except (tk.TclError, AttributeError, TypeError):
+                # Use default value of edge_protection
+                pass
 
             print(
-                f"Parameters: low={self.low_cutoff}, high={self.high_cutoff}, downsample={self.downsample_factor}, artifact_thresh={self.artifact_threshold}, drift={self.drift_correction}, degree={self.drift_degree}, edge_prot={edge_protection}")
+                f"Parameters: low={self.low_cutoff}, high={self.high_cutoff}, downsample={self.downsample_factor}, "
+                f"artifact_thresh={self.artifact_threshold}, drift={self.drift_correction}, "
+                f"degree={self.drift_degree}, edge_prot={edge_protection}")
 
             if not hasattr(self, 'time') or self.time is None or not hasattr(self,
                                                                              'raw_analog_1') or self.raw_analog_1 is None:
